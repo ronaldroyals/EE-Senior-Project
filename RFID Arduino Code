@@ -1,51 +1,50 @@
-#include <SPI.h>
-#include <MFRC522.h>
+#include <SPI.h>        // Include the SPI library
+#include <MFRC522.h>    // Include the MFRC522 library
 
-#define SS_PIN 10
-#define RST_PIN 9
+#define SS_PIN 10       // Define the SS_PIN to communicate with the RFID reader
+#define RST_PIN 9       // Define the RST_PIN to reset the RFID reader
 
-MFRC522 rfid(SS_PIN, RST_PIN);
-byte lastTag[4] = {0};
+MFRC522 rfid(SS_PIN, RST_PIN);  // Create an instance of the MFRC522 library with the SS_PIN and RST_PIN
+byte lastTag[4] = {0};          // Initialize an array to store the last RFID tag read
 
 void setup() {
-  Serial.begin(9600); // Initialize serial communication
-  SPI.begin(); // Initialize SPI bus
-  rfid.PCD_Init(); // Initialize RFID reader
-  Serial.println("Ready to scan for RFID tags...");
+  Serial.begin(9600);   // Initialize serial communication
+  SPI.begin();          // Initialize SPI bus
+  rfid.PCD_Init();      // Initialize RFID reader
+  Serial.println("Ready to scan for RFID tags...");   // Print a message to the serial monitor indicating the program is ready
 }
 
 bool compareTags(byte tag1[], byte tag2[]) {
   // Compare two tags to check if they are the same
   for (byte i = 0; i < 4; i++) {
     if (tag1[i] != tag2[i]) {
-      return false;
+      return false;     // If any byte is different, return false
     }
   }
-  return true;
+  return true;          // If all bytes are the same, return true
 }
 
 void printTag(byte tag[]) {
   // Print the tag ID to the serial monitor
   Serial.print("Tag ID: ");
   for (byte i = 0; i < 4; i++) {
-    Serial.print(tag[i] < 0x10 ? "0" : ""); // Add leading zero if necessary
-    Serial.print(tag[i], HEX); // Print the byte as a hexadecimal number
+    Serial.print(tag[i] < 0x10 ? "0" : "");   // Add leading zero if necessary
+    Serial.print(tag[i], HEX);                // Print the byte as a hexadecimal number
     Serial.print(" ");
   }
-  Serial.println();
+  Serial.println();     // Print a newline character to start a new line in the serial monitor
 }
 
 void loop() {
-  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    // If a new card is present, read the card serial number and print it to the serial monitor
-    byte tag[4] = {rfid.uid.uidByte[0], rfid.uid.uidByte[1], rfid.uid.uidByte[2], rfid.uid.uidByte[3]};
-    if (!compareTags(tag, lastTag)) { // If the tag is different from the last one, print it
-      printTag(tag);
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {    // Check if a new RFID tag is present
+    byte tag[4] = {rfid.uid.uidByte[0], rfid.uid.uidByte[1], rfid.uid.uidByte[2], rfid.uid.uidByte[3]};   // Convert the tag data to a byte array
+    if (!compareTags(tag, lastTag)) {   // Check if the tag is different from the last one read
+      printTag(tag);                    // If it is different, print the tag ID to the serial monitor
       for (byte i = 0; i < 4; i++) {
-        lastTag[i] = tag[i]; // Update the lastTag array
+        lastTag[i] = tag[i];            // Update the lastTag array to store the current tag
       }
     }
-    rfid.PICC_HaltA(); // Stop communication with the card
+    rfid.PICC_HaltA();      // Stop communication with the RFID tag
   }
-  delay(200); // Wait for a short time before checking for another card
+  delay(200);       // Wait for a short time before checking for another tag
 }
